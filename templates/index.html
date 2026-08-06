@@ -6,38 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Expense Tracker</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+     
 </head>
 
 <body>
-    
+
     <nav>
-        <h1>Expense Tracker</h1>
+        <h2>Expense Tracker</h2>
 
         <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/">Dashboard</a></li>
-            <li><a href="/">Expense</a></li>
-            <li><a href="/">Login</a></li>
-
+            <li><a href="/register">Register</a></li>
         </ul>
     </nav>
-    
-    <section class="hero">
 
-        <h1>Manage Your Money Smarter</h1>
+    <div class="container">
 
-        <p>
-            Track your income, expenses,
-            and financial goals in one place.
-        </p>
+        <section class="hero">
 
-        <button>Get Started</button>
+            <h1>Expense Tracker</h1>
 
-    </section>
+            <p>Track your income and expenses easily.</p>
 
+            <a href="{{ url_for('register') }}" class="button">
+                Get Started
+            </a>
+
+        </section>
+
+    </div>
 
 </body>
-
-</html>
