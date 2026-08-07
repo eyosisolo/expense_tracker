@@ -81,6 +81,52 @@ def login():
         return "Invalid username or password."
 
     return render_template("login.html")
+@app.route("/add_expense", methods=["GET", "POST"])
+def add_expense():
+
+    if request.method == "POST":
+
+        title = request.form["title"]
+
+        amount = float(request.form["amount"])
+
+        category = request.form["category"]
+
+        connection = get_connection()
+
+        cursor = connection.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO expenses(title, amount, category)
+            VALUES (?, ?, ?)
+            """,
+            (title, amount, category)
+        )
+
+        connection.commit()
+
+        connection.close()
+
+        return "Expense Added Successfully!"
+
+    return render_template("add_expense.html")
+
+def create_expense_table():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS expenses(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        amount REAL NOT NULL,
+        category TEXT NOT NULL
+    )
+    """)
+    connection.commit()
+    connection.close()
 
 if __name__ == "__main__":
     app.run(debug=True)
