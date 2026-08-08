@@ -76,7 +76,11 @@ def login():
 
         if user:
 
-            return render_template("dashboard.html")
+           expenses = get_all_expenses()
+
+           total = get_total_expenses()
+
+           return render_template("dashboard.html",expenses=expenses, total=total)
 
         return "Invalid username or password."
 
@@ -127,6 +131,55 @@ def create_expense_table():
     """)
     connection.commit()
     connection.close()
+
+def get_all_expenses():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    SELECT id, title, amount, category
+    FROM expenses
+    ORDER BY id DESC
+    """)
+    expenses = cursor.fetchall()
+    connection.close()
+    return expenses
+
+def get_total_expenses():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+    SELECT SUM(amount)
+    FROM expenses
+    """)
+
+    total = cursor.fetchone()[0]
+    connection.close()
+
+    if total is None:
+        return 0.0
+
+    return total
+
+
+@app.route("/delete/<int:id>")
+def delete_expense(id):
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "DELETE FROM expenses WHERE id = ?",
+        (id,)
+    )
+
+    connection.commit()
+    connection.close()
+
+    return "Expense deleted successfully."
 
 if __name__ == "__main__":
     app.run(debug=True)
