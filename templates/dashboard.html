@@ -1,63 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 
- <head>
+<head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Dashboard</title>
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Dashboard - Expense Tracker</title>
 
     <link rel="stylesheet"
           href="{{ url_for('static', filename='style.css') }}">
 
- </head>
+</head>
 
- <body>
+<body>
 
-  <div class="container">
+    <div class="dashboard-container">
 
-    <h1>Expense Tracker Dashboard</h1>
+        <h1>Expense Tracker</h1>
 
-    <p>Welcome!</p>
-    <a href="/add_expense" class="button">Add Expense</a>
-    
-    <h2>Total Expenses: {{ total }}</h2>
+        <h2>
+            Total Expenses:
+            {{ "%.2f"|format(total) }}
+        </h2>
 
-    <h3>Expense List</h3>
 
-    <table border="1">
+        <!-- Search -->
 
-    <tr>
-      <th>ID</th>
-      <th>Title</th>
-      <th>Amount</th>
-      <th>Category</th>
-    </tr>
+        <form action="{{ url_for('search_expenses') }}"
+              method="GET">
 
-    {% for expense in expenses %}
+            <input
+                type="text"
+                name="keyword"
+                placeholder="Search expenses..."
+            >
 
-   <tr>
+            <button type="submit">
+                Search
+            </button>
 
-<td>{{ expense["id"] }}</td>
+        </form>
 
-<td>{{ expense["title"] }}</td>
 
-<td>{{ expense["amount"] }}</td>
+        <!-- Add Expense -->
 
-<td>{{ expense["category"] }}</td>
+        <a href="{{ url_for('add_expense') }}"
+           class="button">
 
-</tr>
+            Add Expense
 
-{% endfor %}
+        </a>
 
-</table>
 
-<br>
+        <h3>Expense List</h3>
 
-<a href="/add_expense" class="button">
-Add Expense
-</a>
-  </div>
 
- </body>
+        <!-- Expense Table -->
 
- </html>
+        <table>
+
+            <thead>
+
+                <tr>
+
+                    <th>ID</th>
+
+                    <th>Title</th>
+
+                    <th>Amount</th>
+
+                    <th>Category</th>
+
+                    <th>Action</th>
+
+                </tr>
+
+            </thead>
+
+
+            <tbody>
+
+                {% for expense in expenses %}
+
+                <tr>
+
+                    <td>
+                        {{ expense["id"] }}
+                    </td>
+
+                    <td>
+                        {{ expense["title"] }}
+                    </td>
+
+                    <td>
+                        {{ "%.2f"|format(expense["amount"]) }}
+                    </td>
+
+                    <td>
+                        {{ expense["category"] }}
+                    </td>
+
+                    <td>
+
+                        <a
+                            href="{{ url_for('delete_expense', id=expense['id']) }}"
+                            onclick="return confirm('Are you sure you want to delete this expense?');"
+                        >
+                            Delete
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% else %}
+
+                <tr>
+
+                    <td colspan="5">
+                        No expenses found.
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+
+        <br>
+
+
+        <!-- Back to Home -->
+
+        <a href="{{ url_for('home') }}"
+           class="back-button">
+
+            ← Back to Home
+
+        </a>
+
+    </div>
+
+</body>
+
+</html>

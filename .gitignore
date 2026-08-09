@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+.env
+
+.vscode/
+
+instance/
+
+*.log
+
+# Local SQLite database
+expense.db

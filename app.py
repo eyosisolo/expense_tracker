@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 from database import get_connection
+
 
 app = Flask(
     __name__,
@@ -7,31 +8,58 @@ app = Flask(
     template_folder="templates"
 )
 
+def create_users_table():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
+        )
+    """)
+
+    connection.commit()
+    connection.close()
+
+
+def create_expense_table():
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS expenses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            amount REAL NOT NULL,
+            category TEXT NOT NULL
+        )
+    """)
+
+    connection.commit()
+    connection.close()
+
 @app.route("/")
 def home():
-    return render_template("index.html")
 
+    return render_template("index.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
 
-        username = request.form["username"]
+        username = request.form["username"].strip()
         password = request.form["password"]
 
         connection = get_connection()
 
         try:
-            cursor = connection.cursor()
 
-            cursor.execute("""
-            CREATE TABLE IF NOT EXISTS users(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                username TEXT UNIQUE,
-                password TEXT
-            )
-            """)
+            cursor = connection.cursor()
 
             cursor.execute(
                 """
@@ -43,21 +71,28 @@ def register():
 
             connection.commit()
 
-        finally:
+        except Exception as error:
+
             connection.close()
 
-        return "Registration Successful!"
+            return f"Registration failed: {error}"
+
+        connection.close()
+
+        return redirect(url_for("login"))
 
     return render_template("register.html")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
 
-        username = request.form["username"]
+        username = request.form["username"].strip()
         password = request.form["password"]
 
         connection = get_connection()
+
         cursor = connection.cursor()
 
         cursor.execute(
@@ -76,25 +111,33 @@ def login():
 
         if user:
 
-           expenses = get_all_expenses()
-
-           total = get_total_expenses()
-
-           return render_template("dashboard.html",expenses=expenses, total=total)
+            return redirect(url_for("dashboard"))
 
         return "Invalid username or password."
 
     return render_template("login.html")
+
+@app.route("/dashboard")
+def dashboard():
+
+    expenses = get_all_expenses()
+
+    total = get_total_expenses()
+
+    return render_template(
+        "dashboard.html",
+        expenses=expenses,
+        total=total
+    )
+
 @app.route("/add_expense", methods=["GET", "POST"])
 def add_expense():
 
     if request.method == "POST":
 
-        title = request.form["title"]
-
+        title = request.form["title"].strip()
         amount = float(request.form["amount"])
-
-        category = request.form["category"]
+        category = request.form["category"].strip()
 
         connection = get_connection()
 
@@ -112,54 +155,45 @@ def add_expense():
 
         connection.close()
 
-        return "Expense Added Successfully!"
+        return redirect(url_for("dashboard"))
 
     return render_template("add_expense.html")
-
-def create_expense_table():
-
-    connection = get_connection()
-    cursor = connection.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS expenses(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        amount REAL NOT NULL,
-        category TEXT NOT NULL
-    )
-    """)
-    connection.commit()
-    connection.close()
 
 def get_all_expenses():
 
     connection = get_connection()
+
     cursor = connection.cursor()
 
     cursor.execute("""
-    SELECT id, title, amount, category
-    FROM expenses
-    ORDER BY id DESC
+        SELECT id, title, amount, category
+        FROM expenses
+        ORDER BY id DESC
     """)
+
     expenses = cursor.fetchall()
+
     connection.close()
+
     return expenses
 
 def get_total_expenses():
 
     connection = get_connection()
+
     cursor = connection.cursor()
 
     cursor.execute("""
-    SELECT SUM(amount)
-    FROM expenses
+        SELECT SUM(amount)
+        FROM expenses
     """)
 
     total = cursor.fetchone()[0]
+
     connection.close()
 
     if total is None:
+
         return 0.0
 
     return total
@@ -169,17 +203,62 @@ def get_total_expenses():
 def delete_expense(id):
 
     connection = get_connection()
+
     cursor = connection.cursor()
 
     cursor.execute(
-        "DELETE FROM expenses WHERE id = ?",
+        """
+        DELETE FROM expenses
+        WHERE id = ?
+        """,
         (id,)
     )
 
     connection.commit()
+
     connection.close()
 
-    return "Expense deleted successfully."
+    return redirect(url_for("dashboard"))
+
+@app.route("/search")
+def search_expenses():
+
+    keyword = request.args.get("keyword", "").strip()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT id, title, amount, category
+        FROM expenses
+        WHERE title LIKE ?
+        OR category LIKE ?
+        ORDER BY id DESC
+        """,
+        (
+            f"%{keyword}%",
+            f"%{keyword}%"
+        )
+    )
+
+    expenses = cursor.fetchall()
+
+    connection.close()
+
+    total = sum(expense["amount"] for expense in expenses)
+
+    return render_template(
+        "dashboard.html",
+        expenses=expenses,
+        total=total
+    )
+
+
+create_users_table()
+create_expense_table()
 
 if __name__ == "__main__":
+
     app.run(debug=True)
